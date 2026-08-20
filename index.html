@@ -1,0 +1,1214 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SALUD-01 | Agente de turnos y consultas</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='48'%3E%F0%9F%8F%A5%3C/text%3E%3C/svg%3E">
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+      background:
+        radial-gradient(circle at top left, var(--cp-accent-soft), transparent 34rem),
+        radial-gradient(circle at 85% 8%, var(--cp-highlight), transparent 28rem),
+        var(--cp-bg);
+      color: var(--cp-text);
+    }
+
+    a {
+      color: var(--cp-link);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .shell {
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+      gap: 24px;
+      padding: 28px;
+      overflow: hidden;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-panel-strong);
+      box-shadow: var(--cp-shadow);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 6px 10px;
+      border: 1px solid var(--cp-border);
+      border-radius: 999px;
+      background: var(--cp-surface);
+      color: var(--cp-text-muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    h1 {
+      max-width: 820px;
+      margin: 16px 0 12px;
+      font-size: clamp(34px, 5vw, 66px);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+    }
+
+    .lead {
+      max-width: 780px;
+      margin: 0;
+      color: var(--cp-text-muted);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .btn {
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      padding: 11px 14px;
+      background: var(--cp-surface);
+      color: var(--cp-text);
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--cp-border-strong);
+    }
+
+    .btn.primary {
+      border-color: var(--cp-accent);
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      font-weight: 800;
+    }
+
+    .hero-card,
+    .card {
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+      box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+    }
+
+    .hero-card {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      padding: 14px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface-soft);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 30px;
+      letter-spacing: -0.04em;
+    }
+
+    .metric span {
+      color: var(--cp-text-muted);
+      font-size: 13px;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 18px 0;
+      padding: 8px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-panel);
+    }
+
+    .tab {
+      flex: 1 1 180px;
+      border: 1px solid transparent;
+      border-radius: 0.625rem;
+      padding: 10px 12px;
+      background: transparent;
+      color: var(--cp-text-muted);
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .tab.active {
+      border-color: var(--cp-border);
+      background: var(--cp-surface);
+      color: var(--cp-text);
+      box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .workbench {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(360px, 1fr) minmax(300px, 380px);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card-header {
+      padding: 16px 16px 0;
+    }
+
+    .card-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 6px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .card-subtitle {
+      margin: 0;
+      color: var(--cp-text-muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .card-body {
+      padding: 16px;
+    }
+
+    .field-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--cp-text-muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    select,
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      padding: 10px 12px;
+      background: var(--cp-bg-elevated);
+      color: var(--cp-text);
+      outline: none;
+    }
+
+    select:focus,
+    input:focus,
+    textarea:focus {
+      border-color: var(--cp-accent);
+      box-shadow: 0 0 0 3px var(--cp-accent-soft);
+    }
+
+    .quick-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .quick {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface-soft);
+      color: var(--cp-text);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .quick:hover {
+      border-color: var(--cp-accent);
+      background: var(--cp-accent-soft);
+    }
+
+    .phone-wrap {
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 20% 15%, var(--cp-accent-soft), transparent 18rem),
+        var(--cp-bg-elevated);
+    }
+
+    .phone {
+      width: min(100%, 390px);
+      min-height: 650px;
+      overflow: hidden;
+      border: 1px solid var(--cp-border-strong);
+      border-radius: 34px;
+      background: var(--cp-surface);
+      box-shadow: var(--cp-shadow);
+    }
+
+    .phone-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px;
+      border-bottom: 1px solid var(--cp-border);
+      background: var(--cp-accent-soft);
+    }
+
+    .clinic-avatar {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      font-size: 23px;
+    }
+
+    .phone-title strong {
+      display: block;
+      line-height: 1.1;
+    }
+
+    .phone-title span {
+      color: var(--cp-text-muted);
+      font-size: 12px;
+    }
+
+    .chat {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .bubble {
+      max-width: 88%;
+      padding: 11px 12px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface-soft);
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .bubble.patient {
+      justify-self: end;
+      border-color: var(--cp-accent);
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+    }
+
+    .bubble.agent {
+      justify-self: start;
+    }
+
+    .bubble strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .appointment-card {
+      margin: 0 16px 16px;
+      padding: 14px;
+      border: 2px solid var(--cp-accent);
+      border-radius: 16px;
+      background:
+        linear-gradient(180deg, var(--cp-accent-soft), transparent 36%),
+        var(--cp-bg-elevated);
+      box-shadow: 0 0 0 4px var(--cp-accent-soft);
+    }
+
+    .appointment-card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .appointment-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--cp-border);
+      color: var(--cp-text-muted);
+      font-size: 13px;
+    }
+
+    .appointment-row:last-child {
+      border-bottom: 0;
+    }
+
+    .appointment-row strong {
+      color: var(--cp-text);
+      text-align: right;
+    }
+
+    .status-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 9px;
+      border: 1px solid var(--cp-border);
+      border-radius: 999px;
+      background: var(--cp-surface-soft);
+      color: var(--cp-text-muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .pill.good {
+      color: var(--cp-success);
+    }
+
+    .pill.warn {
+      color: var(--cp-warning);
+    }
+
+    .pill.risk {
+      color: var(--cp-danger);
+    }
+
+    .slots {
+      display: grid;
+      gap: 10px;
+    }
+
+    .slot {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface-soft);
+      cursor: pointer;
+    }
+
+    .slot.active {
+      border-color: var(--cp-accent);
+      background: var(--cp-accent-soft);
+    }
+
+    .slot strong {
+      display: block;
+    }
+
+    .slot span {
+      color: var(--cp-text-muted);
+      font-size: 12px;
+    }
+
+    .flow {
+      display: grid;
+      gap: 10px;
+    }
+
+    .flow-step {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface-soft);
+    }
+
+    .badge {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      font-weight: 900;
+    }
+
+    .flow-step strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .flow-step span {
+      color: var(--cp-text-muted);
+      font-size: 13px;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .wide {
+      grid-column: 1 / -1;
+    }
+
+    .bar-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .bar-row {
+      display: grid;
+      gap: 6px;
+    }
+
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      color: var(--cp-text-muted);
+      font-size: 13px;
+    }
+
+    .bar-track {
+      height: 10px;
+      overflow: hidden;
+      border: 1px solid var(--cp-border);
+      border-radius: 999px;
+      background: var(--cp-surface-soft);
+    }
+
+    .bar-fill {
+      width: var(--value);
+      height: 100%;
+      background: var(--cp-accent);
+    }
+
+    .queue-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .queue-card {
+      padding: 12px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface-soft);
+    }
+
+    .queue-card strong {
+      display: block;
+      font-size: 24px;
+      letter-spacing: -0.04em;
+    }
+
+    .queue-card span {
+      color: var(--cp-text-muted);
+      font-size: 13px;
+    }
+
+    .doc-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .doc-card {
+      padding: 16px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+      box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+    }
+
+    .doc-card h3 {
+      margin: 0 0 8px;
+    }
+
+    .doc-card p,
+    .doc-card li {
+      color: var(--cp-text-muted);
+      line-height: 1.5;
+    }
+
+    .doc-card ul,
+    .doc-card ol {
+      padding-left: 18px;
+    }
+
+    .mono {
+      font-family: Consolas, "Courier New", Courier, monospace;
+      font-size: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      max-width: 360px;
+      padding: 14px 16px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-panel-strong);
+      color: var(--cp-text);
+      box-shadow: var(--cp-shadow);
+      opacity: 0;
+      transform: translateY(18px);
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+      z-index: 20;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 1180px) {
+      .hero,
+      .workbench,
+      .dashboard,
+      .doc-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .app {
+        padding: 12px;
+      }
+
+      .hero {
+        padding: 18px;
+      }
+
+      .metric-grid,
+      .queue-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .phone {
+        min-height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <span class="eyebrow">SALUD-01 · Copilot Studio + Azure AI Foundry</span>
+          <h1>Agente de turnos y consultas para centros de salud</h1>
+          <p class="lead">
+            Demo para mostrar como un paciente puede sacar un turno, consultar requisitos y resolver preguntas frecuentes
+            sin llamar al call center. El agente contiene guardrails claros: orienta administrativamente, pero no da diagnostico medico.
+          </p>
+          <div class="hero-actions">
+            <button class="btn primary" data-tab-target="paciente">Probar como paciente</button>
+            <button class="btn" data-tab-target="operaciones">Ver impacto operativo</button>
+            <button class="btn" data-tab-target="documentacion">Ver guion</button>
+          </div>
+        </div>
+        <aside class="hero-card">
+          <div>
+            <h2 class="card-title">Mensaje de negocio</h2>
+            <p class="card-subtitle">
+              Menos saturacion telefonica, mas autogestion y mejor preparacion del paciente antes de llegar al centro.
+              La recepcion humana queda para casos complejos. Concepto revolucionario: usar humanos donde hacen falta.
+            </p>
+          </div>
+          <div class="metric-grid">
+            <div class="metric"><strong id="metricCalls">-38%</strong><span>llamadas administrativas</span></div>
+            <div class="metric"><strong id="metricTurnos">126</strong><span>turnos autogestionados</span></div>
+            <div class="metric"><strong id="metricFaq">74%</strong><span>FAQs resueltas sin operador</span></div>
+            <div class="metric"><strong id="metricNoShow">-18%</strong><span>ausentismo por recordatorios</span></div>
+          </div>
+        </aside>
+      </section>
+
+      <nav class="tabs" aria-label="Vistas de demo">
+        <button class="tab active" data-tab="paciente">Vista paciente</button>
+        <button class="tab" data-tab="operaciones">Vista operaciones</button>
+        <button class="tab" data-tab="documentacion">Guion y documentacion</button>
+      </nav>
+
+      <section class="panel active" id="paciente">
+        <div class="workbench">
+          <aside class="card">
+            <div class="card-header">
+              <h2 class="card-title">Datos de la solicitud</h2>
+              <p class="card-subtitle">Cambia el escenario y el agente arma la conversacion, requisitos y turno.</p>
+            </div>
+            <div class="card-body field-stack">
+              <label>
+                Motivo
+                <select id="reasonSelect">
+                  <option value="clinica">Consulta clinica general</option>
+                  <option value="pediatria">Control pediatrico</option>
+                  <option value="laboratorio">Analisis de laboratorio</option>
+                  <option value="cardiologia">Consulta cardiologica</option>
+                  <option value="vacunatorio">Vacunatorio</option>
+                </select>
+              </label>
+              <label>
+                Cobertura
+                <select id="coverageSelect">
+                  <option value="prepaga">Prepaga SaludPlus</option>
+                  <option value="obra">Obra social</option>
+                  <option value="particular">Particular</option>
+                </select>
+              </label>
+              <label>
+                Sede
+                <select id="locationSelect">
+                  <option value="palermo">Sede Palermo</option>
+                  <option value="belgrano">Sede Belgrano</option>
+                  <option value="online">Teleconsulta</option>
+                </select>
+              </label>
+              <label>
+                Paciente demo
+                <input id="patientInput" value="Lucia Fernandez">
+              </label>
+              <button class="btn primary" id="buildConversation">Generar conversacion</button>
+              <div class="quick-list" id="faqButtons"></div>
+            </div>
+          </aside>
+
+          <section class="phone-wrap">
+            <div class="phone" aria-label="Simulador de chat paciente">
+              <div class="phone-top">
+                <div class="clinic-avatar">+</div>
+                <div class="phone-title">
+                  <strong>Centro Vida</strong>
+                  <span>Agente de turnos y consultas</span>
+                </div>
+                <span class="pill good">Online</span>
+              </div>
+              <div class="chat" id="chatBox"></div>
+              <div class="appointment-card" id="appointmentCard"></div>
+            </div>
+          </section>
+
+          <aside class="card">
+            <div class="card-header">
+              <h2 class="card-title">Disponibilidad y logica</h2>
+              <p class="card-subtitle">El agente propone turnos y muestra por que eligio esa opcion.</p>
+            </div>
+            <div class="card-body field-stack">
+              <div class="status-line" id="statusLine"></div>
+              <div class="slots" id="slotList"></div>
+              <button class="btn primary" id="confirmSlot">Confirmar turno demo</button>
+              <div class="flow" id="flowBox"></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="panel" id="operaciones">
+        <div class="dashboard">
+          <article class="card">
+            <div class="card-header">
+              <h2 class="card-title">Carga administrativa</h2>
+              <p class="card-subtitle">Lo que se reduce cuando el paciente resuelve solo lo repetitivo.</p>
+            </div>
+            <div class="card-body bar-list">
+              <div class="bar-row">
+                <div class="bar-label"><span>Turnos nuevos</span><span>68%</span></div>
+                <div class="bar-track"><div class="bar-fill" style="--value:68%"></div></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-label"><span>Requisitos previos</span><span>81%</span></div>
+                <div class="bar-track"><div class="bar-fill" style="--value:81%"></div></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-label"><span>Reprogramaciones</span><span>54%</span></div>
+                <div class="bar-track"><div class="bar-fill" style="--value:54%"></div></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-label"><span>Consultas de cobertura</span><span>47%</span></div>
+                <div class="bar-track"><div class="bar-fill" style="--value:47%"></div></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <h2 class="card-title">Guardrails del agente</h2>
+              <p class="card-subtitle">La parte que evita que un bot administrativo se crea cirujano. Muy recomendable.</p>
+            </div>
+            <div class="card-body flow">
+              <div class="flow-step">
+                <div class="badge">1</div>
+                <div><strong>No diagnostica</strong><span>Ante sintomas, orienta a consultar profesional o urgencias si corresponde.</span></div>
+              </div>
+              <div class="flow-step">
+                <div class="badge">2</div>
+                <div><strong>No indica medicacion</strong><span>No recomienda dosis, tratamientos ni cambios de medicacion.</span></div>
+              </div>
+              <div class="flow-step">
+                <div class="badge">3</div>
+                <div><strong>Escala excepciones</strong><span>Deriva a operador cuando falta cobertura, autorizacion o hay caso sensible.</span></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card wide">
+            <div class="card-header">
+              <h2 class="card-title">Estado del call center</h2>
+              <p class="card-subtitle">Vista ejecutiva simple: demanda, resolucion automatica y casos que requieren humano.</p>
+            </div>
+            <div class="card-body queue-grid">
+              <div class="queue-card"><strong>312</strong><span>interacciones hoy</span></div>
+              <div class="queue-card"><strong>231</strong><span>resueltas por agente</span></div>
+              <div class="queue-card"><strong>46</strong><span>derivadas a operador</span></div>
+              <div class="queue-card"><strong>35</strong><span>pendientes de confirmacion</span></div>
+            </div>
+          </article>
+
+          <article class="card wide">
+            <div class="card-header">
+              <h2 class="card-title">Alertas operativas</h2>
+              <p class="card-subtitle">No son alertas clinicas. Son cuellos de botella administrativos accionables.</p>
+            </div>
+            <div class="card-body flow">
+              <div class="flow-step">
+                <div class="badge">!</div>
+                <div><strong>Laboratorio con alta demanda</strong><span>Proponer turnos alternativos y ampliar cupos de manana.</span></div>
+              </div>
+              <div class="flow-step">
+                <div class="badge">!</div>
+                <div><strong>Muchos pacientes preguntan requisitos</strong><span>Actualizar FAQ visible antes de confirmar turno.</span></div>
+              </div>
+              <div class="flow-step">
+                <div class="badge">!</div>
+                <div><strong>Derivaciones por cobertura</strong><span>Revisar reglas de cobertura para obra social con autorizacion previa.</span></div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="documentacion">
+        <div class="doc-grid">
+          <article class="doc-card">
+            <h3>FAQs de ejemplo</h3>
+            <ul>
+              <li>Que documentacion necesito para atenderme?</li>
+              <li>Como saco, cancelo o reprogramo un turno?</li>
+              <li>Necesito ayuno para laboratorio?</li>
+              <li>Atienden por mi cobertura?</li>
+              <li>Donde queda la sede y cuanto antes debo llegar?</li>
+            </ul>
+          </article>
+
+          <article class="doc-card">
+            <h3>Logica de turnos</h3>
+            <ol>
+              <li>Identificar motivo, sede, cobertura y preferencia horaria.</li>
+              <li>Validar si requiere autorizacion o preparacion previa.</li>
+              <li>Mostrar hasta tres horarios disponibles.</li>
+              <li>Confirmar turno y entregar resumen con requisitos.</li>
+              <li>Ofrecer recordatorio y canal de reprogramacion.</li>
+            </ol>
+          </article>
+
+          <article class="doc-card">
+            <h3>Instrucciones del agente</h3>
+            <p class="mono">
+              Sos un agente administrativo de un centro de salud. Ayudas con turnos, requisitos,
+              sedes, horarios y cobertura. No das diagnostico medico, no indicás medicacion y no
+              reemplazas a un profesional. Si el paciente describe sintomas graves o urgentes,
+              indicás que contacte emergencias o guardia.
+            </p>
+          </article>
+
+          <article class="doc-card">
+            <h3>5 conversaciones de paciente</h3>
+            <ol>
+              <li>Paciente pide turno clinico, elige sede, confirma horario y recibe requisitos.</li>
+              <li>Madre agenda control pediatrico y pregunta documentacion necesaria.</li>
+              <li>Paciente pide laboratorio, el agente aclara ayuno y horarios.</li>
+              <li>Paciente consulta cardiologia; el agente pide orden o derivacion si aplica.</li>
+              <li>Paciente pregunta por vacunas; el agente informa horarios y documentacion.</li>
+            </ol>
+          </article>
+
+          <article class="doc-card">
+            <h3>Arquitectura conceptual</h3>
+            <ul>
+              <li><strong>Copilot Studio:</strong> experiencia conversacional, temas y acciones.</li>
+              <li><strong>Azure AI Foundry:</strong> gestion de modelo, evaluacion y seguridad de app generativa.</li>
+              <li><strong>Base de conocimiento:</strong> FAQs, politicas de turnos, sedes y requisitos.</li>
+              <li><strong>Acciones:</strong> crear turno, reprogramar, enviar recordatorio o derivar a operador.</li>
+            </ul>
+          </article>
+
+          <article class="doc-card">
+            <h3>Documentacion oficial</h3>
+            <ul>
+              <li><a href="https://learn.microsoft.com/microsoft-copilot-studio/" target="_blank" rel="noreferrer">Microsoft Copilot Studio documentation</a></li>
+              <li><a href="https://learn.microsoft.com/azure/ai-foundry/" target="_blank" rel="noreferrer">Azure AI Foundry documentation</a></li>
+              <li><a href="https://learn.microsoft.com/microsoft-copilot-studio/nlu-boost-node" target="_blank" rel="noreferrer">Generative answers en Copilot Studio</a></li>
+              <li><a href="https://learn.microsoft.com/microsoft-copilot-studio/advanced-generative-actions" target="_blank" rel="noreferrer">Generative actions en Copilot Studio</a></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SCENARIOS = {
+      clinica: {
+        label: "Consulta clinica general",
+        professional: "Dra. Valeria Molina",
+        requirement: "Traer DNI, credencial y estudios previos si los hubiera.",
+        slots: [
+          { day: "Lun 24", time: "09:30", location: "Sede Palermo" },
+          { day: "Mar 25", time: "11:00", location: "Sede Palermo" },
+          { day: "Mie 26", time: "16:20", location: "Teleconsulta" }
+        ],
+        faq: [
+          "Quiero sacar un turno con clinica medica",
+          "Que documentacion tengo que llevar?",
+          "Puedo reprogramar si no llego?"
+        ],
+        answer: "Puedo ayudarte a reservar un turno de clinica medica. No evaluo sintomas ni doy diagnostico; si tenes dolor fuerte, falta de aire o una urgencia, contacta guardia o emergencias."
+      },
+      pediatria: {
+        label: "Control pediatrico",
+        professional: "Dr. Martin Acosta",
+        requirement: "Traer DNI del menor, credencial, libreta sanitaria y estudios previos.",
+        slots: [
+          { day: "Lun 24", time: "14:10", location: "Sede Belgrano" },
+          { day: "Mie 26", time: "10:40", location: "Sede Palermo" },
+          { day: "Jue 27", time: "17:00", location: "Sede Belgrano" }
+        ],
+        faq: [
+          "Necesito un control pediatrico",
+          "Que llevo para la consulta del menor?",
+          "Hay turnos despues de las 17?"
+        ],
+        answer: "Te ayudo a coordinar un control pediatrico y a preparar la documentacion. No reemplazo la consulta con el pediatra ni interpreto sintomas."
+      },
+      laboratorio: {
+        label: "Analisis de laboratorio",
+        professional: "Equipo de laboratorio",
+        requirement: "Traer orden medica. Para estudios con ayuno, asistir con 8 horas de ayuno salvo indicacion distinta.",
+        slots: [
+          { day: "Vie 21", time: "08:00", location: "Sede Palermo" },
+          { day: "Vie 21", time: "08:30", location: "Sede Belgrano" },
+          { day: "Lun 24", time: "07:45", location: "Sede Palermo" }
+        ],
+        faq: [
+          "Necesito turno para laboratorio",
+          "Tengo que ir en ayunas?",
+          "Cuanto antes tengo que llegar?"
+        ],
+        answer: "Puedo reservar un turno de laboratorio y recordarte requisitos administrativos. Para indicaciones especificas del estudio, segui la orden medica o consulta al profesional."
+      },
+      cardiologia: {
+        label: "Consulta cardiologica",
+        professional: "Dra. Sofia Rivas",
+        requirement: "Traer DNI, credencial, orden o derivacion si tu cobertura la solicita, y estudios cardiologicos previos.",
+        slots: [
+          { day: "Mar 25", time: "15:00", location: "Sede Palermo" },
+          { day: "Jue 27", time: "12:20", location: "Sede Belgrano" },
+          { day: "Vie 28", time: "09:10", location: "Sede Palermo" }
+        ],
+        faq: [
+          "Quiero ver un cardiologo",
+          "Necesito derivacion?",
+          "Puedo llevar estudios anteriores?"
+        ],
+        answer: "Te ayudo con el turno y requisitos. Si describis dolor de pecho, falta de aire u otro sintoma urgente, no lo gestiones por este canal: contacta emergencias o guardia."
+      },
+      vacunatorio: {
+        label: "Vacunatorio",
+        professional: "Equipo de vacunatorio",
+        requirement: "Traer DNI, credencial y carnet de vacunacion. Algunas vacunas requieren indicacion medica o stock confirmado.",
+        slots: [
+          { day: "Lun 24", time: "10:00", location: "Sede Palermo" },
+          { day: "Mar 25", time: "13:30", location: "Sede Belgrano" },
+          { day: "Jue 27", time: "09:40", location: "Sede Palermo" }
+        ],
+        faq: [
+          "Quiero consultar por vacunas",
+          "Tengo que llevar carnet?",
+          "Como confirmo stock?"
+        ],
+        answer: "Puedo orientarte sobre horarios y documentacion del vacunatorio. No indico vacunas ni esquemas personalizados; eso lo define un profesional."
+      }
+    };
+
+    const reasonSelect = document.getElementById("reasonSelect");
+    const coverageSelect = document.getElementById("coverageSelect");
+    const locationSelect = document.getElementById("locationSelect");
+    const patientInput = document.getElementById("patientInput");
+    const chatBox = document.getElementById("chatBox");
+    const appointmentCard = document.getElementById("appointmentCard");
+    const slotList = document.getElementById("slotList");
+    const statusLine = document.getElementById("statusLine");
+    const flowBox = document.getElementById("flowBox");
+    const faqButtons = document.getElementById("faqButtons");
+    const toast = document.getElementById("toast");
+    let selectedSlot = 0;
+
+    function setTab(tabId) {
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.classList.toggle("active", tab.dataset.tab === tabId);
+      });
+      document.querySelectorAll(".panel").forEach((panel) => {
+        panel.classList.toggle("active", panel.id === tabId);
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function getScenario() {
+      return SCENARIOS[reasonSelect.value];
+    }
+
+    function renderFaqButtons() {
+      const scenario = getScenario();
+      faqButtons.innerHTML = "";
+      scenario.faq.forEach((text) => {
+        const button = document.createElement("button");
+        button.className = "quick";
+        button.type = "button";
+        button.textContent = text;
+        button.addEventListener("click", () => renderConversation(text));
+        faqButtons.appendChild(button);
+      });
+    }
+
+    function coverageText() {
+      const value = coverageSelect.value;
+      if (value === "prepaga") return "Prepaga SaludPlus validada automaticamente.";
+      if (value === "obra") return "Obra social: podria requerir autorizacion previa segun practica.";
+      return "Particular: se informa valor administrativo antes de confirmar.";
+    }
+
+    function renderConversation(customQuestion) {
+      const scenario = getScenario();
+      const patient = patientInput.value || "Paciente demo";
+      const slot = scenario.slots[selectedSlot];
+      const location = locationSelect.options[locationSelect.selectedIndex].text;
+      const question = customQuestion || scenario.faq[0];
+
+      chatBox.innerHTML = `
+        <div class="bubble patient"><strong>${patient}</strong>${question}</div>
+        <div class="bubble agent"><strong>Agente Centro Vida</strong>${scenario.answer}</div>
+        <div class="bubble agent"><strong>Disponibilidad</strong>En ${location}, tengo opciones para ${slot.day} a las ${slot.time}. Tambien puedo mostrar horarios alternativos.</div>
+        <div class="bubble patient"><strong>${patient}</strong>Me sirve ese horario. Que necesito llevar?</div>
+        <div class="bubble agent"><strong>Agente Centro Vida</strong>${scenario.requirement}</div>
+      `;
+
+      appointmentCard.innerHTML = `
+        <h3>Turno preconfirmado</h3>
+        <div class="appointment-row"><span>Paciente</span><strong>${patient}</strong></div>
+        <div class="appointment-row"><span>Prestacion</span><strong>${scenario.label}</strong></div>
+        <div class="appointment-row"><span>Profesional</span><strong>${scenario.professional}</strong></div>
+        <div class="appointment-row"><span>Fecha y hora</span><strong>${slot.day} · ${slot.time}</strong></div>
+        <div class="appointment-row"><span>Sede</span><strong>${slot.location}</strong></div>
+        <div class="appointment-row"><span>Requisitos</span><strong>${scenario.requirement}</strong></div>
+      `;
+
+      statusLine.innerHTML = `
+        <span class="pill good">Turno disponible</span>
+        <span class="pill">Cobertura: ${coverageSelect.options[coverageSelect.selectedIndex].text}</span>
+        <span class="pill warn">Sin diagnostico medico</span>
+      `;
+
+      flowBox.innerHTML = "";
+    }
+
+    function renderSlots() {
+      const scenario = getScenario();
+      slotList.innerHTML = "";
+      scenario.slots.forEach((slot, index) => {
+        const button = document.createElement("button");
+        button.className = `slot${index === selectedSlot ? " active" : ""}`;
+        button.type = "button";
+        button.innerHTML = `
+          <span><strong>${slot.day} · ${slot.time}</strong><span>${slot.location}</span></span>
+          <span class="pill good">Libre</span>
+        `;
+        button.addEventListener("click", () => {
+          selectedSlot = index;
+          renderSlots();
+          renderConversation();
+        });
+        slotList.appendChild(button);
+      });
+    }
+
+    function refreshScenario() {
+      selectedSlot = 0;
+      renderFaqButtons();
+      renderSlots();
+      renderConversation();
+    }
+
+    function confirmSlot() {
+      const scenario = getScenario();
+      const slot = scenario.slots[selectedSlot];
+      flowBox.innerHTML = `
+        <div class="flow-step">
+          <div class="badge">1</div>
+          <div><strong>Turno confirmado</strong><span>${scenario.label} para ${slot.day} a las ${slot.time}.</span></div>
+        </div>
+        <div class="flow-step">
+          <div class="badge">2</div>
+          <div><strong>Requisitos enviados</strong><span>${scenario.requirement}</span></div>
+        </div>
+        <div class="flow-step">
+          <div class="badge">3</div>
+          <div><strong>Recordatorio programado</strong><span>Mensaje automatico 24 horas antes con opcion de reprogramar.</span></div>
+        </div>
+        <div class="flow-step">
+          <div class="badge">4</div>
+          <div><strong>Impacto registrado</strong><span>Interaccion resuelta sin llamada al call center. Pequena victoria contra la musica de espera.</span></div>
+        </div>
+      `;
+      document.getElementById("metricTurnos").textContent = "127";
+      showToast("Turno demo confirmado y flujo administrativo activado.");
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.setTimeout(() => toast.classList.remove("show"), 3200);
+    }
+
+    document.querySelectorAll("[data-tab]").forEach((tab) => {
+      tab.addEventListener("click", () => setTab(tab.dataset.tab));
+    });
+    document.querySelectorAll("[data-tab-target]").forEach((button) => {
+      button.addEventListener("click", () => setTab(button.dataset.tabTarget));
+    });
+    reasonSelect.addEventListener("change", refreshScenario);
+    coverageSelect.addEventListener("change", renderConversation);
+    locationSelect.addEventListener("change", renderConversation);
+    patientInput.addEventListener("input", renderConversation);
+    document.getElementById("buildConversation").addEventListener("click", () => {
+      refreshScenario();
+      showToast("Conversacion actualizada con requisitos y horarios.");
+    });
+    document.getElementById("confirmSlot").addEventListener("click", confirmSlot);
+
+    refreshScenario();
+  </script>
+</body>
+</html>
