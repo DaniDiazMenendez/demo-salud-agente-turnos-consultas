@@ -66,6 +66,36 @@
       --cp-sheen: rgba(255, 255, 255, 0.04);
       --cp-highlight: rgba(253, 142, 161, 0.12);
     }
+    :root {
+      --cp-bg: #f3fbf6;
+      --cp-bg-elevated: #f8fdf9;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #eef8f1;
+      --cp-border: #cfe8d7;
+      --cp-border-strong: #85b995;
+      --cp-accent: #2f8f5b;
+      --cp-accent-hover: #237347;
+      --cp-accent-soft: rgba(47, 143, 91, 0.12);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #159447;
+      --cp-link: #237347;
+      --cp-highlight: rgba(132, 204, 22, 0.14);
+    }
+    html[data-theme="dark"] {
+      --cp-bg: #14231b;
+      --cp-bg-elevated: #102019;
+      --cp-surface: #182820;
+      --cp-surface-soft: #1d3026;
+      --cp-border: #2f4d3d;
+      --cp-border-strong: #6ea982;
+      --cp-accent: #86efac;
+      --cp-accent-hover: #bbf7d0;
+      --cp-accent-soft: rgba(134, 239, 172, 0.16);
+      --cp-accent-fg: #102019;
+      --cp-success: #86efac;
+      --cp-link: #86efac;
+      --cp-highlight: rgba(190, 242, 100, 0.12);
+    }
 
     * {
       box-sizing: border-box;
@@ -75,6 +105,7 @@
       margin: 0;
       font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
       background:
+        linear-gradient(135deg, var(--cp-bg), var(--cp-bg-elevated) 48%, var(--cp-accent-soft)),
         radial-gradient(circle at top left, var(--cp-accent-soft), transparent 34rem),
         radial-gradient(circle at 85% 8%, var(--cp-highlight), transparent 28rem),
         var(--cp-bg);
@@ -110,7 +141,9 @@
       overflow: hidden;
       border: 1px solid var(--cp-border);
       border-radius: 16px;
-      background: var(--cp-panel-strong);
+      background:
+        linear-gradient(135deg, var(--cp-panel-strong), var(--cp-accent-soft)),
+        var(--cp-panel-strong);
       box-shadow: var(--cp-shadow);
     }
 
@@ -331,6 +364,12 @@
     .quick:hover {
       border-color: var(--cp-accent);
       background: var(--cp-accent-soft);
+    }
+
+    .quick.active {
+      border-color: var(--cp-accent);
+      background: var(--cp-accent-soft);
+      font-weight: 800;
     }
 
     .phone-wrap {
@@ -998,8 +1037,8 @@
         ],
         faq: [
           "Necesito un control pediatrico",
-          "Que llevo para la consulta del menor?",
-          "Hay turnos despues de las 17?"
+          "Que documentacion tengo que llevar?",
+          "Puedo reprogramar si no llego?"
         ],
         answer: "Te ayudo a coordinar un control pediatrico y a preparar la documentacion. No reemplazo la consulta con el pediatra ni interpreto sintomas."
       },
@@ -1014,8 +1053,8 @@
         ],
         faq: [
           "Necesito turno para laboratorio",
-          "Tengo que ir en ayunas?",
-          "Cuanto antes tengo que llegar?"
+          "Que documentacion tengo que llevar?",
+          "Puedo reprogramar si no llego?"
         ],
         answer: "Puedo reservar un turno de laboratorio y recordarte requisitos administrativos. Para indicaciones especificas del estudio, segui la orden medica o consulta al profesional."
       },
@@ -1030,8 +1069,8 @@
         ],
         faq: [
           "Quiero ver un cardiologo",
-          "Necesito derivacion?",
-          "Puedo llevar estudios anteriores?"
+          "Que documentacion tengo que llevar?",
+          "Puedo reprogramar si no llego?"
         ],
         answer: "Te ayudo con el turno y requisitos. Si describis dolor de pecho, falta de aire u otro sintoma urgente, no lo gestiones por este canal: contacta emergencias o guardia."
       },
@@ -1046,8 +1085,8 @@
         ],
         faq: [
           "Quiero consultar por vacunas",
-          "Tengo que llevar carnet?",
-          "Como confirmo stock?"
+          "Que documentacion tengo que llevar?",
+          "Puedo reprogramar si no llego?"
         ],
         answer: "Puedo orientarte sobre horarios y documentacion del vacunatorio. No indico vacunas ni esquemas personalizados; eso lo define un profesional."
       }
@@ -1065,6 +1104,7 @@
     const faqButtons = document.getElementById("faqButtons");
     const toast = document.getElementById("toast");
     let selectedSlot = 0;
+    let activeQuestion = "";
 
     function setTab(tabId) {
       document.querySelectorAll(".tab").forEach((tab) => {
@@ -1085,10 +1125,14 @@
       faqButtons.innerHTML = "";
       scenario.faq.forEach((text) => {
         const button = document.createElement("button");
-        button.className = "quick";
+        button.className = `quick${text === activeQuestion ? " active" : ""}`;
         button.type = "button";
         button.textContent = text;
-        button.addEventListener("click", () => renderConversation(text));
+        button.addEventListener("click", () => {
+          activeQuestion = text;
+          renderFaqButtons();
+          renderConversation(activeQuestion);
+        });
         faqButtons.appendChild(button);
       });
     }
@@ -1100,19 +1144,50 @@
       return "Particular: se informa valor administrativo antes de confirmar.";
     }
 
+    function questionType(question) {
+      const text = question.toLowerCase();
+      if (text.includes("reprogramar") || text.includes("no llego") || text.includes("cancel")) return "reschedule";
+      if (text.includes("documentacion") || text.includes("llevar") || text.includes("requisito")) return "documents";
+      return "appointment";
+    }
+
+    function agentResponseFor(question, scenario, slot, location) {
+      const type = questionType(question);
+      if (type === "documents") {
+        return `Para ${scenario.label.toLowerCase()}, necesitas: ${scenario.requirement} ${coverageText()} Si elegis ${location}, te recomiendo llegar 15 minutos antes para admision.`;
+      }
+      if (type === "reschedule") {
+        const alternative = scenario.slots[(selectedSlot + 1) % scenario.slots.length];
+        return `Si no llegas, podes reprogramar desde este canal antes del horario del turno. Mantengo la prestacion ${scenario.label.toLowerCase()} y puedo ofrecerte como alternativa ${alternative.day} a las ${alternative.time} en ${alternative.location}. Si es una urgencia, no reprogrames por aca: comunicate con guardia o emergencias.`;
+      }
+      return `${scenario.answer} ${coverageText()} En ${location}, el primer horario disponible es ${slot.day} a las ${slot.time}.`;
+    }
+
     function renderConversation(customQuestion) {
       const scenario = getScenario();
       const patient = patientInput.value || "Paciente demo";
       const slot = scenario.slots[selectedSlot];
       const location = locationSelect.options[locationSelect.selectedIndex].text;
-      const question = customQuestion || scenario.faq[0];
+      const question = customQuestion || activeQuestion || scenario.faq[0];
+      const type = questionType(question);
+      const agentResponse = agentResponseFor(question, scenario, slot, location);
+      const followUp = type === "documents"
+        ? "Perfecto, tambien quiero ver horarios disponibles."
+        : type === "reschedule"
+          ? "Mostrame el horario alternativo."
+          : "Me sirve ese horario. Que necesito llevar?";
+      const finalAgent = type === "documents"
+        ? `Tambien puedo reservarte el primer turno disponible: ${slot.day} a las ${slot.time} en ${slot.location}.`
+        : type === "reschedule"
+          ? `Te dejo preparada la reprogramacion. Al confirmar, se cancela el turno anterior y se envia un nuevo recordatorio.`
+          : scenario.requirement;
 
       chatBox.innerHTML = `
         <div class="bubble patient"><strong>${patient}</strong>${question}</div>
-        <div class="bubble agent"><strong>Agente Centro Vida</strong>${scenario.answer}</div>
+        <div class="bubble agent"><strong>Agente Centro Vida</strong>${agentResponse}</div>
         <div class="bubble agent"><strong>Disponibilidad</strong>En ${location}, tengo opciones para ${slot.day} a las ${slot.time}. Tambien puedo mostrar horarios alternativos.</div>
-        <div class="bubble patient"><strong>${patient}</strong>Me sirve ese horario. Que necesito llevar?</div>
-        <div class="bubble agent"><strong>Agente Centro Vida</strong>${scenario.requirement}</div>
+        <div class="bubble patient"><strong>${patient}</strong>${followUp}</div>
+        <div class="bubble agent"><strong>Agente Centro Vida</strong>${finalAgent}</div>
       `;
 
       appointmentCard.innerHTML = `
@@ -1148,7 +1223,7 @@
         button.addEventListener("click", () => {
           selectedSlot = index;
           renderSlots();
-          renderConversation();
+          renderConversation(activeQuestion);
         });
         slotList.appendChild(button);
       });
@@ -1156,9 +1231,10 @@
 
     function refreshScenario() {
       selectedSlot = 0;
+      activeQuestion = getScenario().faq[0];
       renderFaqButtons();
       renderSlots();
-      renderConversation();
+      renderConversation(activeQuestion);
     }
 
     function confirmSlot() {
@@ -1199,9 +1275,9 @@
       button.addEventListener("click", () => setTab(button.dataset.tabTarget));
     });
     reasonSelect.addEventListener("change", refreshScenario);
-    coverageSelect.addEventListener("change", renderConversation);
-    locationSelect.addEventListener("change", renderConversation);
-    patientInput.addEventListener("input", renderConversation);
+    coverageSelect.addEventListener("change", () => renderConversation(activeQuestion));
+    locationSelect.addEventListener("change", () => renderConversation(activeQuestion));
+    patientInput.addEventListener("input", () => renderConversation(activeQuestion));
     document.getElementById("buildConversation").addEventListener("click", () => {
       refreshScenario();
       showToast("Conversacion actualizada con requisitos y horarios.");
